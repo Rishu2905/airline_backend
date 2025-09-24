@@ -31,9 +31,11 @@ app.get("/api/flight/:flightNo", (req, res) => { // getting daqta from Flightdet
 });
 app.get("/api/flight/:from/:to" ,(req,res) => {
   const { from,to, } = req.params;
-  // if (!from || !to) {
-  //     return res.status(400).json({error:'enter origin,destination'});
-  // }
+  if (!from || !to) {
+      return res.status(400).json({error:'enter origin,destination'});
+  }
+  else
+  {
   const sql="select * from flights where origin=? and destination=?";
   connection.query(sql,[from,to],(err,result)=>{
     if (err){
@@ -44,6 +46,7 @@ app.get("/api/flight/:from/:to" ,(req,res) => {
     }
     res.json(result);
   })
+}
   // res.json({message: `Flight ${from} will appear here`});
 })
 
