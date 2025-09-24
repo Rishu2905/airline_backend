@@ -29,9 +29,22 @@ app.get("/api/flight/:flightNo", (req, res) => { // getting daqta from Flightdet
     res.json(result[0]);
   })
 });
-app.get("/api/flight/:from" ,(req,res) => {
-  const { from } = req.params;
-  res.json({message: `Flight ${from} will appear here`});
+app.get("/api/flight/:from/:to" ,(req,res) => {
+  const { from,to, } = req.params;
+  // if (!from || !to) {
+  //     return res.status(400).json({error:'enter origin,destination'});
+  // }
+  const sql="select * from flights where origin=? and destination=?";
+  connection.query(sql,[from,to],(err,result)=>{
+    if (err){
+      return res.status(500).json({error:'error connecting'});
+    }
+    if (result.length==0){
+      return res.status(404).json({error:'no flights found'});
+    }
+    res.json(result);
+  })
+  // res.json({message: `Flight ${from} will appear here`});
 })
 
 // Start server
