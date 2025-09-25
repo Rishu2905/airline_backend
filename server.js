@@ -30,7 +30,7 @@ app.get("/api/flight/:flightNo", (req, res) => { // getting daqta from Flightdet
   })
 });
 app.get("/api/flight/:from/:to" ,(req,res) => {
-  const { from,to, } = req.params;
+  const { from,to } = req.params;
   if (!from || !to) {
       return res.status(400).json({error:'enter origin,destination'});
   }
@@ -49,6 +49,19 @@ app.get("/api/flight/:from/:to" ,(req,res) => {
 }
   // res.json({message: `Flight ${from} will appear here`});
 })
+app.get("/api/booking/:bookingid",(req,res) => {
+  const { bookingid }=req.params;
+  const sql="select booking_id,flight_id,booking_date,seat_number,status from bookings where booking_id=?";
+  connection.query(sql,[bookingid],(err,result)=>{
+    if (err){
+      return res.status(500).json({error:'error connecting'});
+    }
+    if (result.length==0){
+      return res.status(404).json({error:'no record found'});
+    }
+    res.json(result);
+  })
+}) 
 
 // Start server
 app.listen(port, () => {
