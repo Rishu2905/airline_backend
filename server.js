@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 // link receiving requests
 app.get("/api/flight/:flightNo", (req, res) => { // getting daqta from Flightdetails.js page using .get 
   const { flightNo } = req.params;
-  const sql ="select * from flights where flight_number=?";
+  const sql ="select flight_number,origin,destination,substr(departure_time,1,10) as date,substr(departure_time,12,19) as time from flights where flight_number=?";
   connection.query(sql,[flightNo],(err,result) => { //sends query to database and store result in variable result
     if (err){
       return res.status(500).json({error:'error connecting'});
@@ -29,15 +29,15 @@ app.get("/api/flight/:flightNo", (req, res) => { // getting daqta from Flightdet
     res.json(result[0]);
   })
 });
-app.get("/api/flight/:from/:to" ,(req,res) => {
-  const { from,to } = req.params;
-  if (!from || !to) {
+app.get("/api/flight/:from/:to/:date" ,(req,res) => {
+  const { from,to,date} = req.params;
+  if (!from || !to || !date) {
       return res.status(400).json({error:'enter origin,destination'});
   }
   else
   {
-  const sql="select * from flights where origin=? and destination=?";
-  connection.query(sql,[from,to],(err,result)=>{
+  const sql="select * from flights where origin=? and destination=? and departure_time like ?";
+  connection.query(sql,[from,to,date+"%"],(err,result)=>{
     if (err){
       return res.status(500).json({error:'error connecting'});
     }
