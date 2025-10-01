@@ -36,7 +36,7 @@ app.get("/api/flight/:from/:to/:date" ,(req,res) => {
   }
   else
   {
-  const sql="select * from flights where origin=? and destination=? and departure_time like ?";
+  const sql="select * from flights join airlines on flights.airline_id=airlines.airline_id where flights.origin=? and flights.destination=? and flights.departure_time like ? and flights.airline_id=airlines.airline_id";
   connection.query(sql,[from,to,date+"%"],(err,result)=>{
     if (err){
       return res.status(500).json({error:'error connecting'});
