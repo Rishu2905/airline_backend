@@ -62,6 +62,59 @@ app.get("/api/booking/:bookingid",(req,res) => {
     res.json(result);
   })
 }) 
+function getdata(table,email,number){
+  const sql=`select passenger_id from ${table} where email=? and phone=?`;
+  connection.query(sql,[email,number],(err,result)=>{
+    if(err) return res.status(404).json("not found");
+    res.json(result);
+  })
+}
+function postdata(table,firstname,lastname,email,number){
+  const sql=`insert into ${table} (firstname,lastname,email,phone) values (?,?,?,?)`;
+  connection.query(sql,[firstname,lastname,email,number],(err,result)=>{
+    if (err) return res.status(500).json("not able to add");
+    getdata(passengers,email,number);
+  })
+}
+
+app.post("/api/flightbookings", (req, res) => {
+  console.log("req recived");
+  const { firstname, lastname, email, number } = req.body;
+  const sql = "SELECT passenger_id FROM passengers WHERE email=? AND phone=?";
+  console.log('query processing',sql);
+
+  connection.query(sql, [email, number], (err, result) => 
+    {
+    if (err) {
+      console.log('error in first query');
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    if (result.length > 0) {
+      console.log('have a result');
+      return res.json(result[0]);
+    }
+
+    const inssql = "INSERT INTO passengers (first_name, last_name, email, phone) VALUES (?, ?, ?, ?)";
+    console.log("running insql");
+    connection.query(inssql, [firstname, lastname, email, number], (err2) => {
+      if (err2) {
+        console.error("Error inserting passenger:", err2);
+        return res.status(500).json({ error: "Could not insert passenger" }); // stop here
+      }
+      console.log("addition successfull");
+
+      // Only runs if insert succeeded
+      connection.query(sql, [email, number], (err3, result3) => {
+        if (err3) {
+          return res.status(500).json({ error: "Error fetching passenger after insert" });
+        }
+        // console.log(res.json(result));
+        return res.json(result3[0]);
+      });
+    });
+  });
+});
 
 // Start server
 app.listen(port, () => {
