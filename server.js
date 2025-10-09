@@ -79,11 +79,23 @@ function postdata(table,firstname,lastname,email,number){
 
 app.post("/api/flightbookings", (req, res) => {
   console.log("req recived");
-  const { firstname, lastname, email, number } = req.body;
-  const sql = "SELECT passenger_id FROM passengers WHERE email=? AND phone=?";
+  const { firstname, lastname, email, number,flightNumber } = req.body;
+  const sql = "SELECT passenger_id FROM passengers WHERE email=?";
+  const sql3="insert into bookings (passenger_id,flight_id,booking_date) values (?,?,NOW())";
+  const sql4="select flight_id from flights where flight_number=?";
+  connection.query(sql4,[flightNumber],(err5,result5)=>{
+    if(err5){console.error("error finding flights",err5);
+      return res.status(500).json({ error: "Database error while fetching flight" });
+    }
+    if(result5.length==0){console.log("no matching flights");
+      return res.status(500).json({ error: "Database error while fetching flight" });
+    }
+    const flightId=result5[0].flight_id;
+    console.log("flight number",flightId);
+  
   console.log('query processing',sql);
 
-  connection.query(sql, [email, number], (err, result) => 
+  connection.query(sql, [email], (err, result) => 
     {
     if (err) {
       console.log('error in first query');
@@ -92,28 +104,54 @@ app.post("/api/flightbookings", (req, res) => {
 
     if (result.length > 0) {
       console.log('have a result');
-      return res.json(result[0]);
+      console.log("creating new booking");
+      connection.query(sql3,[result[0]['passenger_id'],flightId],(err4)=>{
+        if (err4){return res.status(500).json("couldnt create booking",err4) }
+        console.log("temporary booking created for existing passenger");
+        return res.json({ message: "Booking successful for existing passenger" });
+      })
+      return;
+      
+      
     }
 
     const inssql = "INSERT INTO passengers (first_name, last_name, email, phone) VALUES (?, ?, ?, ?)";
     console.log("running insql");
-    connection.query(inssql, [firstname, lastname, email, number], (err2) => {
+    connection.query(inssql, [firstname, lastname, email, number], (err2,result2) => {
       if (err2) {
         console.error("Error inserting passenger:", err2);
         return res.status(500).json({ error: "Could not insert passenger" }); // stop here
       }
       console.log("addition successfull");
+      const newPassengerId = result2.insertId;
+      console.log(newPassengerId);
+      console.log(flightId);
 
       // Only runs if insert succeeded
-      connection.query(sql, [email, number], (err3, result3) => {
-        if (err3) {
-          return res.status(500).json({ error: "Error fetching passenger after insert" });
-        }
-        // console.log(res.json(result));
-        return res.json(result3[0]);
-      });
+
+        // uses insertId for creating new booking as previous search query resulted in delay and crashes
+        connection.query(sql3, [newPassengerId,flightId], (err4, result4) => {
+  if (err4) {
+    console.error("Booking creation failed!");
+    console.error("SQL used:", sql3);
+    console.error("Values:", [newPassengerId,flightId]);
+    console.error("Full MySQL error:", err4);
+    return res.status(500).json({
+      error: "Booking creation failed",
+      details: err4.message || err4.message,
+    });
+  }
+
+  console.log("Temporary booking created for new passenger");
+  return res.json({ message: "Booking successful for new passenger" });
+});
+
+      
+      
     });
   });
+  });
+  
 });
 
 // Start server
