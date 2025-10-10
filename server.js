@@ -49,7 +49,7 @@ app.get("/api/flight/:from/:to/:date" ,(req,res) => {
 }
   // res.json({message: `Flight ${from} will appear here`});
 })
-app.get("/api/booking/:bookingid",(req,res) => {
+app.get("/api/booking-status/:bookingid",(req,res) => {
   const { bookingid }=req.params;
   const sql="select booking_id,flight_id,booking_date,seat_number,status from bookings where booking_id=?";
   connection.query(sql,[bookingid],(err,result)=>{
